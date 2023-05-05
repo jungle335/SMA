@@ -4,8 +4,10 @@ from events import *
 import pygame
 import os
 
-agents = read_map("./SMA/tests/system__default.txt")
+# Call function to read the file
+agents = read_map("./tests/system__default.txt")
 
+# Get Width and Height and scale the Grid Window to fit
 gridW = agents[0].W
 gridH = agents[0].H
 
@@ -18,12 +20,14 @@ window = pygame.display.set_mode(window)
 matrix = [[0 for _ in range(gridW)] for _ in range(gridH)]
 pygame.time.set_timer(pygame.USEREVENT, move_timer)
 
+# This represents the step and visual grid generation
 while True:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
         elif event.type == pygame.USEREVENT:
+            # Iterate through all available agents
             for ag in agents:
                 print("CURRENT AGENT: " + str(ag.id))
                 direction = ag.perceive(Events(ag.holes, ag.tiles, ag.obstacles, [(other_ag.get_agent_position(), other_ag.colour, other_ag.score) \
@@ -39,20 +43,19 @@ while True:
 
                 print("AFTER PERCEPTIONS IT MOVES TO: " + direction)
                 new_pos = ag.Move(direction)
+                
+
+                # Check if the new position is blocked by obstacle or by hole
                 holes_values = ag.holes.values()
                 holes_positions = [elem[2] for elem in holes_values]
-                print(holes_positions)
                 if new_pos not in ag.obstacles and new_pos in holes_positions or new_pos not in holes_positions and new_pos in ag.obstacles or new_pos in ag.obstacles and new_pos in holes_positions:
-                    print("not ok")
+                    print("Agent will keep the current position this step!")
                 else:
-                    
+                    print("Agent will move from position: ", ag.get_agent_position(), "To position: ", new_pos)
                     ag.update_agent_position(new_pos)
-                print("Agent will move from position: ", ag.get_agent_position(), "To position: ", new_pos)
                 
-
+                
                 # ag.perceive(Events(ag.))
-                
-
                 # new_pos = ag.Move(direction, ag.W, ag.H)
                 # neigh_hole_direction = ag.holesNeighbours()
                 # if neigh_hole_direction != '':

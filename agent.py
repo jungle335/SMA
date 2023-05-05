@@ -16,27 +16,28 @@ inaltimea grid-ului
 # Define class Agend, inherits Grid
 '''
 Contains methods:
-    get_agent_position() - Get current agent's position
+    * get_agent_position() - Get current agent's position
 
-    update_score(nr_points) - Updates score
+    * update_score(nr_points) - Updates score
 
-    Move(direction) - Returns the new position if position is valid
-                    - Direction: North, South, West, East
+    * Move(direction) - Returns the new position if position is valid
+                      - Direction: North, South, West, East
 
-    update_agent_position(position) - Updates the agent's position
+    * update_agent_position(position) - Updates the agent's position
 
-    Pick(tile_color) - Pick a tile from the current position
+    * Pick(tile_color) - Pick a tile from the current position
 
-    Droptile() - Drop a tile on the current position
+    * Droptile() - Drop a tile on the current position
 
-    Use_tile(direction) - Use a tile on a hole
-                        - Direction must be the direction of the hole
+    * Use_tile(direction) - Use a tile on a hole
+                          - Direction must be the direction of the hole
 
-    holesNeighbours() - Check if there are any holes as neighbours
+    * holesNeighbours() - Check if there are any holes as neighbours
+                        - Returns direction of the hole neighbour if exist, empty string otherwise
 
-    TransferPoints(Agent, points)
+    * TransferPoints(Agent, points)
 
-    perceive(events) - add perceptions and return an action (currently) a direction)
+    * perceive(events) - Add perceptions and return an action (currently) a direction)
 '''
 class Agent(Grid):
     x, y, colour, score = None, None, None, 0
@@ -63,6 +64,7 @@ class Agent(Grid):
     def update_score(self, nr_points):
         self.score += nr_points
 
+    # Move towards a specific direction, also checks not to go outside Grid
     def Move(self, direction):
         h, w = self.H, self.W
         if direction == 'North':
@@ -84,6 +86,11 @@ class Agent(Grid):
         print(tile_color)
         self.is_Holding_Tile = [True, tile_color]
 
+    # Check if the current position has a group of tiles
+    '''
+    If current position has already a group of tiles, add them to the stack
+    else create a new group to display it on the grid
+    '''
     def Droptile(self):
         ag_pos = self.get_agent_position()
         if super().isTile(ag_pos):
@@ -96,7 +103,7 @@ class Agent(Grid):
             # Adaugam in dictionar un nou key
             new_tile_key = list(self.tiles.keys())[-1] + 1
             self.tiles[new_tile_key] = [1, self.is_Holding_Tile[1], ag_pos]
-            print("Going to drop tile on an empty grid cell.")
+            print("Going to drop tile on an empty Grid cell.")
             self.is_Holding_Tile = [False, None]
 
     def holesNeighbours(self):
@@ -143,10 +150,12 @@ class Agent(Grid):
     def Transfer_points(self, MyAgent, points):
         pass
 
+    # Compute Manhattan Distance to the nearest objective (Tile or Hole)
     def get_manhattan_dist(self, dictionary, ag_pos):
         positions = [val[2] for val in dictionary.values()]
         return sorted(positions, key=lambda pos: abs(ag_pos[0] - pos[0]) + abs(ag_pos[1] - pos[1]))
 
+    # Get coming direction at a new position
     def coming_direction(self, direction):
         if direction == "North":
             return "South"
@@ -157,6 +166,7 @@ class Agent(Grid):
         elif direction == "East":
             return "West"
 
+    # Check if the path forward is blocked on the future position
     def is_Valid(self, position, direction):
         if position in self.obstacles or position in [elem[2] for elem in self.holes.values()]:
             return False
@@ -165,37 +175,37 @@ class Agent(Grid):
                 position[0], position[1] - 1), (position[0], position[1] + 1)
             coming_from = self.coming_direction(direction)
             valid_pos = {el: True for el in ['North', 'South', 'West', 'East']}
-
-            if not self.is_Holding_Tile[0]:
-                if north in self.obstacles or north in [elem[2] for elem in self.holes.values()] or not (
+            #if not self.is_Holding_Tile[0]:
+            if north in self.obstacles or north in [elem[2] for elem in self.holes.values()] or not (
                         north[0] - 1 >= 0 and north[0] - 1 < self.H and north[1] >= 0 and north[1] < self.W):
                     valid_pos['North'] = False
-                if south in self.obstacles or south in [elem[2] for elem in self.holes.values()] or not (
+            if south in self.obstacles or south in [elem[2] for elem in self.holes.values()] or not (
                         south[0] + 1 >= 0 and south[0] + 1 < self.H and south[0] >= 0 and south[0] < self.W):
                     valid_pos['South'] = False
-                if west in self.obstacles or west in [elem[2] for elem in self.holes.values()] or not (
+            if west in self.obstacles or west in [elem[2] for elem in self.holes.values()] or not (
                         west[0] >= 0 and west[0] < self.H and west[1] - 1 >= 0 and west[1] - 1 < self.W):
                     valid_pos['West'] = False
-                if east in self.obstacles or east in [elem[2] for elem in self.holes.values()] or not (
+            if east in self.obstacles or east in [elem[2] for elem in self.holes.values()] or not (
                         east[0] >= 0 and east[0] < self.H and east[0] + 1 >= 0 and east[0] + 1 < self.W):
                     valid_pos['East'] = False
-            else:
-                if north in self.obstacles or not (
-                        north[0] - 1 >= 0 and north[0] - 1 < self.H and north[1] >= 0 and north[1] < self.W):
-                    valid_pos['North'] = False
-                if south in self.obstacles or not (
-                        0 <= south[0] + 1 < self.H and 0 <= south[0] < self.W):
-                    valid_pos['South'] = False
-                if west in self.obstacles or not (
-                        west[0] >= 0 and west[0] < self.H and west[1] - 1 >= 0 and west[1] - 1 < self.W):
-                    valid_pos['West'] = False
-                if east in self.obstacles or not (
-                        east[0] >= 0 and east[0] < self.H and east[0] + 1 >= 0 and east[0] + 1 < self.W):
-                    valid_pos['East'] = False
+            # else:
+            #     if north in self.obstacles or not (
+            #             north[0] - 1 >= 0 and north[0] - 1 < self.H and north[1] >= 0 and north[1] < self.W):
+            #         valid_pos['North'] = False
+            #     if south in self.obstacles or not (
+            #             0 <= south[0] + 1 < self.H and 0 <= south[0] < self.W):
+            #         valid_pos['South'] = False
+            #     if west in self.obstacles or not (
+            #             west[0] >= 0 and west[0] < self.H and west[1] - 1 >= 0 and west[1] - 1 < self.W):
+            #         valid_pos['West'] = False
+            #     if east in self.obstacles or not (
+            #             east[0] >= 0 and east[0] < self.H and east[0] + 1 >= 0 and east[0] + 1 < self.W):
+            #         valid_pos['East'] = False
 
             valid_pos = {k: v for k, v in valid_pos.items() if k != coming_from}
             return False if all(val == False for val in valid_pos.values()) else True
 
+    # Functions that read the perceptions
     def perceive(self, events):
         ag_pos = self.get_agent_position()
         if not events.has_Tile[0]:
@@ -239,7 +249,7 @@ class Agent(Grid):
         return random.choice(['North', 'South', 'West', 'East'])
 
     
-
+# Function to read the file:
 def read_map(filepath):
     MyAgents = []
 

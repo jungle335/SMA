@@ -3,11 +3,16 @@ from environment import *
 # Define Grid class, inherits environment
 '''
 Containe methods:
-    isTile()
-    isHole()
-    get_tile_color()
-    update_tiles()
-    get_key()
+    * isTile(position) - Returns a position if there is a Tile
+
+    * isHole(position) - Returns a position if there is a Hole
+
+    * get_tile_color(position) - Returns the tile value for the specified position
+
+    * update_tiles(position) - Updates the tiles on the current position
+
+    * get_key(dictionary, position) - Returns a key of a specified dictionary at a given position
+                                 
 '''
 class Grid(Environment):
     W, H = None, None

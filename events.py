@@ -1,5 +1,4 @@
-
-
+# Class events used for building the perceptions
 class Events:
     holes, tiles, obstacles = None, None, None
     ag_positions = None
@@ -17,4 +16,4 @@ class Events:
     def __str__(self):
         return f"Holes: {self.holes}, \nTiles: {self.tiles}, \nObstacles: {self.obstacles}, \nAgent Positions: {self.ag_positions}, \nHas_Tile: {self.has_Tile}\n"
 
-# Define the message format
+
