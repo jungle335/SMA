@@ -1,4 +1,4 @@
-import pade
+
 
 class Events:
     holes, tiles, obstacles = None, None, None

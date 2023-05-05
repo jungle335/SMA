@@ -1,10 +1,10 @@
 import sys
-
-from classes import *
+from agent import *
 from events import *
-from pade.acl.messages import ACLMessage, AID
+import pygame
+import os
 
-agents = read_map("./tests/system__default.txt")
+agents = read_map("./SMA/tests/system__default.txt")
 
 gridW = agents[0].W
 gridH = agents[0].H
@@ -24,35 +24,34 @@ while True:
             pygame.quit()
             sys.exit()
         elif event.type == pygame.USEREVENT:
-            # direction = random.choice(["North", "South", "East", "West"])
             for ag in agents:
+                print("CURRENT AGENT: " + str(ag.id))
                 direction = ag.perceive(Events(ag.holes, ag.tiles, ag.obstacles, [(other_ag.get_agent_position(), other_ag.colour, other_ag.score) \
                                                                 for other_ag in agents if ag.id != other_ag.id], ag.is_Holding_Tile))
-                msg = ACLMessage()
-                msg.set_content('Hello from External Loop')
-                msg.add_receiver(AID(name=str(ag.id)))  # get the Agent ID and add it as the receiver of the message
-                msg.set_sender(ag.get_aid())
-                # Send the message
-                # ag.send(msg)
-
-                # Display the message content
-                # print(f"Sent message '{msg.get_content()}' to agent {ag.get_id}")
-                print(direction)
-                dir_neighs = ag.holesNeighbours()
-                if dir_neighs != '':
-                    ag.Use_tile(dir_neighs)
-                print(direction)
-                new_pos = ag.Move(direction)
-
-                print("sdsadasd", ag.get_agent_position(), new_pos)
-
-                if new_pos not in ag.obstacles or new_pos not in ag.holes:
-                    ag.update_agent_position(new_pos)
-
-                # ag.perceive(Events(ag.))
+                # Check if current position is a tile
                 if ag.isTile(ag.get_agent_position()) and not ag.is_Holding_Tile[0]:
                     ag.Pick(ag.get_tile_colour(ag.get_agent_position()))
                     ag.update_tiles(ag.get_agent_position())
+                # Check if there are holes neighbours
+                dir_neighs = ag.holesNeighbours()
+                if dir_neighs != '':
+                    ag.Use_tile(dir_neighs)
+
+                print("AFTER PERCEPTIONS IT MOVES TO: " + direction)
+                new_pos = ag.Move(direction)
+                holes_values = ag.holes.values()
+                holes_positions = [elem[2] for elem in holes_values]
+                print(holes_positions)
+                if new_pos not in ag.obstacles and new_pos in holes_positions or new_pos not in holes_positions and new_pos in ag.obstacles or new_pos in ag.obstacles and new_pos in holes_positions:
+                    print("not ok")
+                else:
+                    
+                    ag.update_agent_position(new_pos)
+                print("Agent will move from position: ", ag.get_agent_position(), "To position: ", new_pos)
+                
+
+                # ag.perceive(Events(ag.))
+                
 
                 # new_pos = ag.Move(direction, ag.W, ag.H)
                 # neigh_hole_direction = ag.holesNeighbours()
