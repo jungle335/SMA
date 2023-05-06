@@ -1,7 +1,8 @@
 from grid import *
 import random
 from events import *
-
+from agentmessage import *
+from inbox import *
 """
 N t T W H
 nr_MyAgenti
@@ -13,7 +14,7 @@ inaltimea grid-ului
 
 
 
-# Define class Agend, inherits Grid
+# Define class Agent, inherits Grid
 '''
 Contains methods:
     * get_agent_position() - Get current agent's position
@@ -43,8 +44,7 @@ class Agent(Grid):
     x, y, colour, score = None, None, None, 0
     id = 1
     is_Holding_Tile = None
-    host = 'localhost'
-    port = 1234
+    
 
     def __init__(self, x, y, colour, grid):
         super().__init__(grid.W, grid.H, grid.obstacles, grid.tiles, grid.holes, grid.env)
@@ -54,6 +54,7 @@ class Agent(Grid):
         self.is_Holding_Tile = [False, None]
         self.id = Agent.id
         Agent.id += 1
+        self.inbox = Inbox()
 
     def __str__(self):
         return f"Position: ({self.x}, {self.y})\nColor: {self.colour}"
@@ -83,7 +84,6 @@ class Agent(Grid):
         self.y = position[1]
 
     def Pick(self, tile_color):
-        print(tile_color)
         self.is_Holding_Tile = [True, tile_color]
 
     # Check if the current position has a group of tiles
@@ -100,7 +100,7 @@ class Agent(Grid):
                 tile_key = self.get_key(self.tiles, ag_pos)
                 self.tiles[tile_key][0] += 1
         else:
-            # Adaugam in dictionar un nou key
+            # Add a new key to tile dictionary to represent it on the visual Grid
             new_tile_key = list(self.tiles.keys())[-1] + 1
             self.tiles[new_tile_key] = [1, self.is_Holding_Tile[1], ag_pos]
             print("Going to drop tile on an empty Grid cell.")
@@ -210,7 +210,6 @@ class Agent(Grid):
         ag_pos = self.get_agent_position()
         if not events.has_Tile[0]:
             pos_list = self.get_manhattan_dist(events.tiles, ag_pos)
-            print(pos_list)
             i = 0
             while i < len(pos_list):
                 next_dr = None
@@ -224,14 +223,16 @@ class Agent(Grid):
                     next_dr = "South"
                 if self.is_Valid(self.Move(next_dr), next_dr):
                     return next_dr
+                i += 1
 
-                i += 1
         elif events.has_Tile[0]:
-            holes_values = events.holes.values()
-            holesColorAndPos = [(elem[1], elem[2]) for elem in holes_values]
-            print(holesColorAndPos)
-            pos_list = self.get_manhattan_dist(events.holes, ag_pos)
-            print(pos_list)
+            holesValues = events.holes.values()
+            holesColorAndPos = [(elem[1], elem[2]) for elem in holesValues if elem[1] == self.is_Holding_Tile[1]]
+            holeKeys = [self.get_key(self.holes, hole[1]) for hole in holesColorAndPos]
+            validHoles = {}
+            for key in holeKeys:
+                validHoles[key] = events.holes[key]
+            pos_list = self.get_manhattan_dist(validHoles, ag_pos)
             i = 0
             while i < len(pos_list):
                 next_dr = None
@@ -246,56 +247,16 @@ class Agent(Grid):
                 if self.is_Valid(self.Move(next_dr), next_dr):
                     return next_dr
                 i += 1
+                 
         return random.choice(['North', 'South', 'West', 'East'])
 
-    
-# Function to read the file:
-def read_map(filepath):
-    MyAgents = []
+    def send_message(self, message):
+        for receiver in message.receivers:
+            receiver.inbox.add_message(message)
 
-    with open(filepath) as f:
-        # board coordinates
-        first_line = [int(x) for x in f.readline().split()]
-        f.readline()
-
-        # colors of the MyAgents
-        MyAgent_colors = [x for x in f.readline().split()]
-        local_ag_pos = f.readline().split()
-        MyAgent_pos = [(int(local_ag_pos[i]), int(local_ag_pos[i + 1])) for i in range(0, len(local_ag_pos), 2)]
-
-        # OBSTACLES
-        obstacles = []
-        while True:
-            line = f.readline().strip()
-            if line.startswith('TILES') or len(obstacles):
-                break
-            if line.isspace() or line.startswith('OBSTACLES'):
-                continue
-            line = line.split()
-            obstacles = [(int(line[i]), int(line[i + 1])) for i in range(0, len(line), 2)]
-
-        f.readline()
-        tiles_dict, holes_dict = {}, {}
-        temp_line, i = f.readline(), 0
-        while temp_line.strip() != '':
-            cur_line = [int(elem) if elem.isnumeric() else elem for elem in temp_line.split()]
-            tiles_dict[i] = cur_line[:-2] + [tuple(cur_line[-2:])]
-            temp_line = f.readline()
-            i += 1
-
-        f.readline()
-        temp_line, i = f.readline(), 0
-        while temp_line.strip() != '':
-            cur_line = [int(elem) if elem.isnumeric() else elem for elem in temp_line.split()]
-            holes_dict[i] = cur_line[:-2] + [tuple(cur_line[-2:])]
-            temp_line = f.readline()
-            i += 1
-
-        f.close()
-
-        for colour, (x, y) in zip(MyAgent_colors, MyAgent_pos):
-            MyAgents.append(
-                Agent(x=x, y=y, colour=colour, grid=Grid(*first_line[-2:], obstacles, tiles_dict, holes_dict,
-                                                           Environment(*first_line[:3]))))
-
-        return MyAgents
+    def receive_message(self):
+        msg_list = []
+        while len(self.inbox) != 0:
+            msg = self.inbox.get_message()
+            msg_list.append(msg)
+        return msg_list

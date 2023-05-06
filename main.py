@@ -1,11 +1,12 @@
 import sys
 from agent import *
 from events import *
+from read_map import *
 import pygame
 import os
 
 # Call function to read the file
-agents = read_map("./tests/system__default.txt")
+agents = read_map("./tests/system__FV_sys4.txt")
 
 # Get Width and Height and scale the Grid Window to fit
 gridW = agents[0].W
@@ -29,31 +30,47 @@ while True:
         elif event.type == pygame.USEREVENT:
             # Iterate through all available agents
             for ag in agents:
-                print("CURRENT AGENT: " + str(ag.id))
+                print("* CURRENT AGENT: " + str(ag.id))
+                # Check if there are existing messages for the agent
+                msgList = ag.receive_message()
+                if len(msgList) != 0:
+                    for msg in msgList:
+                        print(f"Received Message from {msg.sender_id}:\n {msg.message}")
+
+                # Build perceptions 
                 direction = ag.perceive(Events(ag.holes, ag.tiles, ag.obstacles, [(other_ag.get_agent_position(), other_ag.colour, other_ag.score) \
                                                                 for other_ag in agents if ag.id != other_ag.id], ag.is_Holding_Tile))
-                # Check if current position is a tile
+                
+                # Check if current position is a tile in order to pick a tile
                 if ag.isTile(ag.get_agent_position()) and not ag.is_Holding_Tile[0]:
                     ag.Pick(ag.get_tile_colour(ag.get_agent_position()))
                     ag.update_tiles(ag.get_agent_position())
-                # Check if there are holes neighbours
+
+                # Check if there are holes as neighbours in order to use the tile if carrying one
                 dir_neighs = ag.holesNeighbours()
                 if dir_neighs != '':
                     ag.Use_tile(dir_neighs)
 
-                print("AFTER PERCEPTIONS IT MOVES TO: " + direction)
+                # Procede to new position
+                print("* AFTER PERCEPTIONS IT MOVES TO: " + direction)
                 new_pos = ag.Move(direction)
-                
-
                 # Check if the new position is blocked by obstacle or by hole
+                # change position if is clear
                 holes_values = ag.holes.values()
                 holes_positions = [elem[2] for elem in holes_values]
                 if new_pos not in ag.obstacles and new_pos in holes_positions or new_pos not in holes_positions and new_pos in ag.obstacles or new_pos in ag.obstacles and new_pos in holes_positions:
-                    print("Agent will keep the current position this step!")
+                    print("* Agent will keep the current position this step!")
                 else:
-                    print("Agent will move from position: ", ag.get_agent_position(), "To position: ", new_pos)
+                    print("* Agent will move from position: ", ag.get_agent_position(), "To position: ", new_pos)
                     ag.update_agent_position(new_pos)
                 
+                # Prepare the messsage to send to other agents
+                message_content = Message(agPosition=ag.get_agent_position(), agHoldingTileColor=ag.is_Holding_Tile[1])
+                message = AgentMessage(conversation_id="Inform")
+                message.setSender(ag.id)
+                message.addReceivers([other_ag for other_ag in agents if ag.id != other_ag.id])
+                message.addContent(message_content)
+                ag.send_message(message)
                 
                 # ag.perceive(Events(ag.))
                 # new_pos = ag.Move(direction, ag.W, ag.H)
@@ -70,6 +87,9 @@ while True:
                 # else:
                 #     ag.update_agent_position(new_pos)   
 
+                print("\n")
+
+# Draw the Visual Grid
     window.fill((255, 255, 255))
 
     for row in range(gridW):

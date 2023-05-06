@@ -39,7 +39,6 @@ class Grid(Environment):
         return position in [elem[2] for elem in self.holes.values()]
 
     def get_tile_colour(self, position):
-        print(position)
         print([elem[1] for elem in self.tiles.values() if position == elem[2]])
         return [elem[1] for elem in self.tiles.values() if position == elem[2]][0]
 
