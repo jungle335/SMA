@@ -59,8 +59,14 @@ class Agent(Grid):
     def __str__(self):
         return f"Position: ({self.x}, {self.y})\nColor: {self.colour}"
 
+    def get_agent_score(self):
+        return self.score
+
     def get_agent_position(self):
         return self.x, self.y
+
+    def get_agent_colour(self):
+        return self.colour
 
     def update_score(self, nr_points):
         self.score += nr_points
@@ -142,13 +148,24 @@ class Agent(Grid):
             hol_pos = (ag_pos[0], ag_pos[1] + 1)
 
         get_hole = super().get_key(self.holes, hol_pos)
+
+        if self.holes[get_hole][0] == 1 and self.holes[get_hole][1] == self.get_agent_colour():
+            self.update_score(40)
+            print(f"The agent {self.id} gets 40 and has a new number of points {self.get_agent_score()}")
+        elif self.holes[get_hole][0] != 1 and self.holes[get_hole][1] == self.get_agent_colour():
+            self.update_score(10)
+            print(f"The agent {self.id} gets 10 and has a new number of points {self.get_agent_score()}")
+
         self.holes[get_hole][0] -= 1
         if self.holes[get_hole][0] == 0:
             del self.holes[get_hole]
         self.is_Holding_Tile = [False, None]
 
     def Transfer_points(self, MyAgent, points):
-        pass
+        print(f"Initial points for agent {self.id} is {self.get_agent_score()}\nInitial points for agent {MyAgent.id} is {MyAgent.get_agent_score()}")
+        MyAgent.update_score(points)
+        self.update_score(-points)
+        print(f"Transfered points from {self.id} to agent {MyAgent.id}\nNow the agent {MyAgent.id} has {MyAgent.get_agent_score()} and {self.id} has {self.get_agent_score()}")
 
     # Compute Manhattan Distance to the nearest objective (Tile or Hole)
     def get_manhattan_dist(self, dictionary, ag_pos):

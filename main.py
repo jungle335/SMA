@@ -47,9 +47,12 @@ while True:
                     ag.update_tiles(ag.get_agent_position())
 
                 # Check if there are holes as neighbours in order to use the tile if carrying one
+                points_to_be_transfered = 5
                 dir_neighs = ag.holesNeighbours()
                 if dir_neighs != '':
                     ag.Use_tile(dir_neighs)
+                    if points_to_be_transfered < ag.get_agent_score():
+                        ag.Transfer_points([other_ag for other_ag in agents if ag.id != other_ag.id][0], 5)
 
                 # Procede to new position
                 print("* AFTER PERCEPTIONS IT MOVES TO: " + direction)
@@ -92,6 +95,7 @@ while True:
 # Draw the Visual Grid
     window.fill((255, 255, 255))
 
+    move_text = 1
     for row in range(gridW):
         for col in range(gridH):
             rect = pygame.Rect(row * CELL_SIZE[0], col * CELL_SIZE[1], CELL_SIZE[0], CELL_SIZE[1])
@@ -101,7 +105,8 @@ while True:
                 if (row, col) == ag.get_agent_position():
                     font = pygame.font.SysFont(None, 40)
                     text = font.render(f"Ag {ag.id} " + ag.colour[:2].upper(), True, (0, 0, 0))
-                    text_rect = text.get_rect(center=(col * CELL_SIZE[0] + CELL_SIZE[0] / 2, row * CELL_SIZE[1] + CELL_SIZE[1] / 2))
+                    text_rect = text.get_rect(center=(col * CELL_SIZE[0] + CELL_SIZE[0] / 2, row * CELL_SIZE[1] + CELL_SIZE[1] / 4 * move_text))
+                    move_text += 1
                     window.blit(text, text_rect)
 
                 if (row, col) in ag.obstacles:
@@ -112,14 +117,14 @@ while True:
                     if (row, col) == ag.tiles[key][2]:
                         font = pygame.font.SysFont(None, 40)
                         text = font.render("T" + str(ag.tiles[key][0]) + ag.tiles[key][1][:2].upper(), True, (0, 0, 0))
-                        text_rect = text.get_rect(center=(col * CELL_SIZE[0] + CELL_SIZE[0] / 2, row * CELL_SIZE[1] + CELL_SIZE[1] / 2))
+                        text_rect = text.get_rect(center=(col * CELL_SIZE[0] + CELL_SIZE[0] / 2, row * CELL_SIZE[1] + CELL_SIZE[1] / -4))
                         window.blit(text, text_rect)
 
                 for key in ag.holes:
                     if (row, col) == ag.holes[key][2]:
                         font = pygame.font.SysFont(None, 40)
                         text = font.render("H" + str(ag.holes[key][0]) + ag.holes[key][1][:2].upper(), True, (0, 0, 0))
-                        text_rect = text.get_rect(center=(col * CELL_SIZE[0] + CELL_SIZE[0] / 2, row * CELL_SIZE[1] + CELL_SIZE[1] / 2))
+                        text_rect = text.get_rect(center=(col * CELL_SIZE[0] + CELL_SIZE[0] / 2, row * CELL_SIZE[1] + CELL_SIZE[1] / -4))
                         window.blit(text, text_rect)
 
     pygame.display.update()
