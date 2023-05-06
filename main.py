@@ -117,14 +117,14 @@ while True:
                     if (row, col) == ag.tiles[key][2]:
                         font = pygame.font.SysFont(None, 40)
                         text = font.render("T" + str(ag.tiles[key][0]) + ag.tiles[key][1][:2].upper(), True, (0, 0, 0))
-                        text_rect = text.get_rect(center=(col * CELL_SIZE[0] + CELL_SIZE[0] / 2, row * CELL_SIZE[1] + CELL_SIZE[1] / -4))
+                        text_rect = text.get_rect(center=(col * CELL_SIZE[0] + CELL_SIZE[0] / 2, row * CELL_SIZE[1] + CELL_SIZE[1] * 3 / 4))
                         window.blit(text, text_rect)
 
                 for key in ag.holes:
                     if (row, col) == ag.holes[key][2]:
                         font = pygame.font.SysFont(None, 40)
                         text = font.render("H" + str(ag.holes[key][0]) + ag.holes[key][1][:2].upper(), True, (0, 0, 0))
-                        text_rect = text.get_rect(center=(col * CELL_SIZE[0] + CELL_SIZE[0] / 2, row * CELL_SIZE[1] + CELL_SIZE[1] / -4))
+                        text_rect = text.get_rect(center=(col * CELL_SIZE[0] + CELL_SIZE[0] / 2, row * CELL_SIZE[1] + CELL_SIZE[1] * 3 / 4))
                         window.blit(text, text_rect)
 
     pygame.display.update()
