@@ -6,7 +6,7 @@ import pygame
 import os
 
 # Call function to read the file
-agents = read_map("./tests/system__FV_sys4.txt")
+agents = read_map("./tests/system__default.txt")
 
 # Get Width and Height and scale the Grid Window to fit
 gridW = agents[0].W
@@ -58,7 +58,7 @@ while True:
                 # change position if is clear
                 holes_values = ag.holes.values()
                 holes_positions = [elem[2] for elem in holes_values]
-                if new_pos not in ag.obstacles and new_pos in holes_positions or new_pos not in holes_positions and new_pos in ag.obstacles or new_pos in ag.obstacles and new_pos in holes_positions:
+                if (new_pos not in ag.obstacles and new_pos in holes_positions) or (new_pos not in holes_positions and new_pos in ag.obstacles) or (new_pos in ag.obstacles and new_pos in holes_positions):
                     print("* Agent will keep the current position this step!")
                 else:
                     print("* Agent will move from position: ", ag.get_agent_position(), "To position: ", new_pos)
