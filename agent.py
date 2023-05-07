@@ -3,6 +3,7 @@ import random
 from events import *
 from agentmessage import *
 from inbox import *
+from path import * 
 """
 N t T W H
 nr_MyAgenti
@@ -167,11 +168,6 @@ class Agent(Grid):
         self.update_score(-points)
         print(f"Transfered points from {self.id} to agent {MyAgent.id}\nNow the agent {MyAgent.id} has {MyAgent.get_agent_score()} and {self.id} has {self.get_agent_score()}")
 
-    # Compute Manhattan Distance to the nearest objective (Tile or Hole)
-    def get_manhattan_dist(self, dictionary, ag_pos):
-        positions = [val[2] for val in dictionary.values()]
-        return sorted(positions, key=lambda pos: abs(ag_pos[0] - pos[0]) + abs(ag_pos[1] - pos[1]))
-
     # Get coming direction at a new position
     def coming_direction(self, direction):
         if direction == "North":
@@ -183,64 +179,24 @@ class Agent(Grid):
         elif direction == "East":
             return "West"
 
-    # Check if the path forward is blocked on the future position
-    def is_Valid(self, position, direction):
-        if position in self.obstacles or position in [elem[2] for elem in self.holes.values()]:
-            return False
-        else:
-            north, south, west, east = (position[0] + 1, position[1]), (position[0] - 1, position[1]), (
-                position[0], position[1] - 1), (position[0], position[1] + 1)
-            coming_from = self.coming_direction(direction)
-            valid_pos = {el: True for el in ['North', 'South', 'West', 'East']}
-            #if not self.is_Holding_Tile[0]:
-            if north in self.obstacles or north in [elem[2] for elem in self.holes.values()] or not (
-                        north[0] - 1 >= 0 and north[0] - 1 < self.H and north[1] >= 0 and north[1] < self.W):
-                    valid_pos['North'] = False
-            if south in self.obstacles or south in [elem[2] for elem in self.holes.values()] or not (
-                        south[0] + 1 >= 0 and south[0] + 1 < self.H and south[0] >= 0 and south[0] < self.W):
-                    valid_pos['South'] = False
-            if west in self.obstacles or west in [elem[2] for elem in self.holes.values()] or not (
-                        west[0] >= 0 and west[0] < self.H and west[1] - 1 >= 0 and west[1] - 1 < self.W):
-                    valid_pos['West'] = False
-            if east in self.obstacles or east in [elem[2] for elem in self.holes.values()] or not (
-                        east[0] >= 0 and east[0] < self.H and east[0] + 1 >= 0 and east[0] + 1 < self.W):
-                    valid_pos['East'] = False
-            # else:
-            #     if north in self.obstacles or not (
-            #             north[0] - 1 >= 0 and north[0] - 1 < self.H and north[1] >= 0 and north[1] < self.W):
-            #         valid_pos['North'] = False
-            #     if south in self.obstacles or not (
-            #             0 <= south[0] + 1 < self.H and 0 <= south[0] < self.W):
-            #         valid_pos['South'] = False
-            #     if west in self.obstacles or not (
-            #             west[0] >= 0 and west[0] < self.H and west[1] - 1 >= 0 and west[1] - 1 < self.W):
-            #         valid_pos['West'] = False
-            #     if east in self.obstacles or not (
-            #             east[0] >= 0 and east[0] < self.H and east[0] + 1 >= 0 and east[0] + 1 < self.W):
-            #         valid_pos['East'] = False
-
-            valid_pos = {k: v for k, v in valid_pos.items() if k != coming_from}
-            return False if all(val == False for val in valid_pos.values()) else True
-
     # Functions that read the perceptions
     def perceive(self, events):
         ag_pos = self.get_agent_position()
+        holesPos = [elem[2] for elem in events.holes.values()]
         if not events.has_Tile[0]:
-            pos_list = self.get_manhattan_dist(events.tiles, ag_pos)
-            i = 0
-            while i < len(pos_list):
-                next_dr = None
-                if pos_list[i][1] < ag_pos[1]:
-                    next_dr = "West"
-                elif pos_list[i][1] > ag_pos[1]:
-                    next_dr = "East"
-                elif pos_list[i][0] < ag_pos[0]:
-                    next_dr = "North"
-                else:
-                    next_dr = "South"
-                if self.is_Valid(self.Move(next_dr), next_dr):
-                    return next_dr
-                i += 1
+            pos_list = get_manhattan_dist(events.tiles, ag_pos)
+            new_pos = path(self.H, self.W, self.get_agent_position(), pos_list, self.obstacles, holesPos)
+            next_dr = None
+            if new_pos[1] < ag_pos[1]:
+                next_dr = "West"
+            elif new_pos[1] > ag_pos[1]:
+                next_dr = "East"
+            elif new_pos[0] < ag_pos[0]:
+                next_dr = "North"
+            else:
+                next_dr = "South"
+            
+            return next_dr
 
         elif events.has_Tile[0]:
             holesValues = events.holes.values()
@@ -249,23 +205,22 @@ class Agent(Grid):
             validHoles = {}
             for key in holeKeys:
                 validHoles[key] = events.holes[key]
-            pos_list = self.get_manhattan_dist(validHoles, ag_pos)
-            i = 0
-            while i < len(pos_list):
-                next_dr = None
-                if pos_list[i][1] < ag_pos[1]:
-                    next_dr = "West"
-                elif pos_list[i][1] > ag_pos[1]:
-                    next_dr = "East"
-                elif pos_list[i][0] < ag_pos[0]:
-                    next_dr = "North"
-                else:
-                    next_dr = "South"
-                if self.is_Valid(self.Move(next_dr), next_dr):
-                    return next_dr
-                i += 1
+            pos_list = get_manhattan_dist(validHoles, ag_pos)
+            new_pos = path(self.H, self.W, self.get_agent_position(), pos_list, events.obstacles)
+            next_dr = None
+            if new_pos[1] < ag_pos[1]:
+                next_dr = "West"
+            elif new_pos[1] > ag_pos[1]:
+                next_dr = "East"
+            elif new_pos[0] < ag_pos[0]:
+                next_dr = "North"
+            else:
+                next_dr = "South"
+            
+            return next_dr
+ 
                  
-        return random.choice(['North', 'South', 'West', 'East'])
+        # return random.choice(['North', 'South', 'West', 'East'])
 
     def send_message(self, message):
         for receiver in message.receivers:

@@ -30,6 +30,11 @@ while True:
         elif event.type == pygame.USEREVENT:
             # Iterate through all available agents
             for ag in agents:
+                if len(ag.holes) == 0:
+                    print("System ended:")
+                    pygame.quit()
+                    sys.exit()
+                    
                 print("* CURRENT AGENT: " + str(ag.id))
                 # Check if there are existing messages for the agent
                 msgList = ag.receive_message()
