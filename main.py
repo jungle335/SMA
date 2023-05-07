@@ -31,7 +31,7 @@ while True:
             # Iterate through all available agents
             for ag in agents:
                 if len(ag.holes) == 0:
-                    print("System ended:")
+                    print("System ended")
                     pygame.quit()
                     sys.exit()
                     
