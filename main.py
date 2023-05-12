@@ -6,7 +6,7 @@ import pygame
 import os
 
 # Call function to read the file
-agents = read_map("./tests/system__default.txt")
+agents, grid = read_map("./tests/system__default.txt")
 
 # Get Width and Height and scale the Grid Window to fit
 gridW = agents[0].W

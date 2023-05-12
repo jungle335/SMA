@@ -51,4 +51,5 @@ def read_map(filepath):
                 Agent(x=x, y=y, colour=colour, grid=Grid(*first_line[-2:], obstacles, tiles_dict, holes_dict,
                                                            Environment(*first_line[:3]))))
 
-        return MyAgents
+        return MyAgents, Grid(*first_line[-2:], obstacles, tiles_dict, holes_dict,
+                                                           Environment(*first_line[:3]))
