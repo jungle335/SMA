@@ -2,7 +2,6 @@ import sys
 from agent import *
 from events import *
 from read_map import *
-from action import *
 import pygame
 import os
 
