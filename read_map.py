@@ -1,6 +1,7 @@
 from environment import *
 from grid import *
 from agent import *
+from planning import Plan
 
 # Function to read the file:
 def read_map(filepath):
@@ -47,9 +48,10 @@ def read_map(filepath):
         f.close()
 
         for colour, (x, y) in zip(MyAgent_colors, MyAgent_pos):
+            plan_ag = Plan()
             MyAgents.append(
                 Agent(x=x, y=y, colour=colour, grid=Grid(*first_line[-2:], obstacles, tiles_dict, holes_dict,
-                                                           Environment(*first_line[:3]))))
+                                                           Environment(*first_line[:3])), plan=plan_ag))
 
         return MyAgents, Grid(*first_line[-2:], obstacles, tiles_dict, holes_dict,
                                                            Environment(*first_line[:3]))

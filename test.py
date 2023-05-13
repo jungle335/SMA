@@ -118,9 +118,9 @@ while True:
             sys.exit()
         elif event.type == pygame.USEREVENT:
             if len(grid.holes) == 0:
-                    print("System ended")
-                    pygame.quit()
-                    sys.exit()
+                print("System ended")
+                pygame.quit()
+                sys.exit()
             # Create a list to store the threads for each agent action
             threads = []
             for ag in agents:

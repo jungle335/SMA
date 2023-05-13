@@ -36,3 +36,20 @@
 
     #         valid_pos = {k: v for k, v in valid_pos.items() if k != coming_from}
     #         return False if all(val == False for val in valid_pos.values()) else True
+
+
+# pickTile = "Pick"
+# use_Tile = "Use_tile"
+# throw_Tile = "Droptile"
+# throw_Points = "Transfer_points"
+# moveAg = "Move"
+name = None
+def __init__(self, name, *args):
+    self.name = name
+    self.parameters = list(args)
+
+def get_action_name(self):
+    return self.name
+    
+def __str__(self):
+    return f"Current Action: {self.name}\nParameters: {self.parameters}"

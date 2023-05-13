@@ -2,6 +2,7 @@ import sys
 from agent import *
 from events import *
 from read_map import *
+from action import *
 import pygame
 import os
 
@@ -34,8 +35,10 @@ while True:
                     print("System ended")
                     pygame.quit()
                     sys.exit()
-                    
-                print("* CURRENT AGENT: " + str(ag.id))
+
+                print(f"Plans for the current agent: {ag.id}")
+                print(ag.plan)
+                print("\n* CURRENT AGENT: " + str(ag.id))
                 # Check if there are existing messages for the agent
                 msgList = ag.receive_message()
                 if len(msgList) != 0:
@@ -43,35 +46,37 @@ while True:
                         print(f"Received Message from {msg.sender_id}:\n {msg.message}")
 
                 # Build perceptions 
-                direction = ag.perceive(Events(ag.holes, ag.tiles, ag.obstacles, [(other_ag.get_agent_position(), other_ag.colour, other_ag.score) \
+                # direction = ag.perceive(Events(ag.holes, ag.tiles, ag.obstacles, [(other_ag.get_agent_position(), other_ag.colour, other_ag.score) \
+                #                                                 for other_ag in agents if ag.id != other_ag.id], ag.is_Holding_Tile))
+                action = ag.perceive(Events(ag.holes, ag.tiles, ag.obstacles, [(other_ag.get_agent_position(), other_ag.colour, other_ag.score) \
                                                                 for other_ag in agents if ag.id != other_ag.id], ag.is_Holding_Tile))
-                
-                # Check if current position is a tile in order to pick a tile
-                if ag.isTile(ag.get_agent_position()) and not ag.is_Holding_Tile[0]:
-                    ag.Pick(ag.get_tile_colour(ag.get_agent_position()))
-                    ag.update_tiles(ag.get_agent_position())
+                print(f"Action: ", action)
+                ag.plan.add_Action(action)
 
-                # Check if there are holes as neighbours in order to use the tile if carrying one
-                points_to_be_transfered = 5
-                dir_neighs = ag.holesNeighbours()
-                if dir_neighs != '':
-                    ag.Use_tile(dir_neighs)
+                get_action_name, get_action_params = action.split(": ") 
+                if get_action_name == "Move":
+                    new_pos = ag.Move(get_action_params)
+                    # Procede to new position
+                    print("* AFTER PERCEPTIONS IT MOVES TO: " + get_action_params)
+                    # Check if the new position is blocked by obstacle or by hole
+                    # change position if is clear
+                    holes_values = ag.holes.values()
+                    holes_positions = [elem[2] for elem in holes_values]
+                    if (new_pos not in ag.obstacles and new_pos in holes_positions) or (new_pos not in holes_positions and new_pos in ag.obstacles) or (new_pos in ag.obstacles and new_pos in holes_positions):
+                        print("* Agent will keep the current position this step!")
+                    else:
+                        print("* Agent will move from position: ", ag.get_agent_position(), "To position: ", new_pos)
+                        ag.update_agent_position(new_pos)
+                elif get_action_name == "Pick":
+                    ag.Pick(get_action_params)
+                    ag.update_tiles(ag.get_agent_position())
+                elif get_action_name == "UseTile":
+                    points_to_be_transfered = 5
+                    ag.Use_tile(get_action_params)
                     if points_to_be_transfered < ag.get_agent_score():
                         ag.Transfer_points([other_ag for other_ag in agents if ag.id != other_ag.id][0], 5)
-
-                # Procede to new position
-                print("* AFTER PERCEPTIONS IT MOVES TO: " + direction)
-                new_pos = ag.Move(direction)
-                # Check if the new position is blocked by obstacle or by hole
-                # change position if is clear
-                holes_values = ag.holes.values()
-                holes_positions = [elem[2] for elem in holes_values]
-                if (new_pos not in ag.obstacles and new_pos in holes_positions) or (new_pos not in holes_positions and new_pos in ag.obstacles) or (new_pos in ag.obstacles and new_pos in holes_positions):
-                    print("* Agent will keep the current position this step!")
-                else:
-                    print("* Agent will move from position: ", ag.get_agent_position(), "To position: ", new_pos)
-                    ag.update_agent_position(new_pos)
-                
+        
+                ag.plan.remove()
                 # Prepare the messsage to send to other agents
                 message_content = Message(agPosition=ag.get_agent_position(), agHoldingTileColor=ag.is_Holding_Tile[1])
                 message = AgentMessage(conversation_id="Inform")

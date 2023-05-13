@@ -4,6 +4,7 @@ from events import *
 from agentmessage import *
 from inbox import *
 from path import * 
+from planning import *
 """
 N t T W H
 nr_MyAgenti
@@ -45,9 +46,9 @@ class Agent(Grid):
     x, y, colour, score = None, None, None, 0
     id = 1
     is_Holding_Tile = None
-    
+    plan = None
 
-    def __init__(self, x, y, colour, grid):
+    def __init__(self, x, y, colour, grid, plan: Plan=None):
         super().__init__(grid.W, grid.H, grid.obstacles, grid.tiles, grid.holes, grid.env)
         self.x = x
         self.y = y
@@ -56,6 +57,7 @@ class Agent(Grid):
         self.id = Agent.id
         Agent.id += 1
         self.inbox = Inbox()
+        self.plan = plan
 
     def __str__(self):
         return f"Position: ({self.x}, {self.y})\nColor: {self.colour}"
@@ -182,10 +184,18 @@ class Agent(Grid):
     # Functions that read the perceptions
     def perceive(self, events):
         ag_pos = self.get_agent_position()
+        if self.isTile(ag_pos) and not self.is_Holding_Tile[0]:
+            return f"Pick: {self.get_tile_colour(ag_pos)}"
+
+        dir_neighs = self.holesNeighbours()
+        if dir_neighs != '':
+            return f"UseTile: {dir_neighs}"
+        
         holesPos = [elem[2] for elem in events.holes.values()]
         if not events.has_Tile[0]:
             pos_list = get_manhattan_dist(events.tiles, ag_pos)
             new_pos = path(self.H, self.W, self.get_agent_position(), pos_list, self.obstacles, holesPos)
+     
             next_dr = None
             if new_pos[1] < ag_pos[1]:
                 next_dr = "West"
@@ -196,7 +206,7 @@ class Agent(Grid):
             else:
                 next_dr = "South"
             
-            return next_dr
+            return f"Move: {next_dr}"
 
         elif events.has_Tile[0]:
             holesValues = events.holes.values()
@@ -207,6 +217,7 @@ class Agent(Grid):
                 validHoles[key] = events.holes[key]
             pos_list = get_manhattan_dist(validHoles, ag_pos)
             new_pos = path(self.H, self.W, self.get_agent_position(), pos_list, events.obstacles)
+            
             next_dr = None
             if new_pos[1] < ag_pos[1]:
                 next_dr = "West"
@@ -217,11 +228,10 @@ class Agent(Grid):
             else:
                 next_dr = "South"
             
-            return next_dr
+            return f'Move: {next_dr}'
  
                  
         # return random.choice(['North', 'South', 'West', 'East'])
-
     def send_message(self, message):
         for receiver in message.receivers:
             receiver.inbox.add_message(message)
