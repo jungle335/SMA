@@ -6,7 +6,7 @@ import pygame
 import os
 
 # Call function to read the file
-agents, grid = read_map("./tests/system__default.txt")
+agents, grid = read_map("./tests/system__FV_sys4.txt")
 
 # Get Width and Height and scale the Grid Window to fit
 gridW = agents[0].W
@@ -14,7 +14,7 @@ gridH = agents[0].H
 
 window = (800, 600)
 CELL_SIZE = (window[0] // gridW, window[1] // gridH)
-move_timer = 1500
+move_timer = grid.t
 
 pygame.init()
 window = pygame.display.set_mode(window)
@@ -35,69 +35,66 @@ while True:
                     pygame.quit()
                     sys.exit()
 
-                print(f"Plans for the current agent: {ag.id}")
-                print(ag.plan)
                 print("\n* CURRENT AGENT: " + str(ag.id))
-                # Check if there are existing messages for the agent
-                msgList = ag.receive_message()
-                if len(msgList) != 0:
-                    for msg in msgList:
-                        print(f"Received Message from {msg.sender_id}:\n {msg.message}")
 
-                # Build perceptions 
-                # direction = ag.perceive(Events(ag.holes, ag.tiles, ag.obstacles, [(other_ag.get_agent_position(), other_ag.colour, other_ag.score) \
-                #                                                 for other_ag in agents if ag.id != other_ag.id], ag.is_Holding_Tile))
+
                 action = ag.perceive(Events(ag.holes, ag.tiles, ag.obstacles, [(other_ag.get_agent_position(), other_ag.colour, other_ag.score) \
                                                                 for other_ag in agents if ag.id != other_ag.id], ag.is_Holding_Tile))
-                print(f"Action: ", action)
                 ag.plan.add_Action(action)
 
-                get_action_name, get_action_params = action.split(": ") 
-                if get_action_name == "Move":
-                    new_pos = ag.Move(get_action_params)
-                    # Procede to new position
-                    print("* AFTER PERCEPTIONS IT MOVES TO: " + get_action_params)
-                    # Check if the new position is blocked by obstacle or by hole
-                    # change position if is clear
-                    holes_values = ag.holes.values()
-                    holes_positions = [elem[2] for elem in holes_values]
-                    if (new_pos not in ag.obstacles and new_pos in holes_positions) or (new_pos not in holes_positions and new_pos in ag.obstacles) or (new_pos in ag.obstacles and new_pos in holes_positions):
-                        print("* Agent will keep the current position this step!")
+                messagedActions = []
+                if len(ag.plan.actions) != 0:
+                    for other_ag in agents:
+                        if ag.id != other_ag.id:
+                            message_content = Message(agPosition=ag.get_agent_position(), agNextAction=ag.plan.actions[0] ,agHoldingTileColor=ag.is_Holding_Tile[1])
+                            message = AgentMessage(conversation_id=str(ag.id) + ":" + str(other_ag.id))
+                            message.setSender(ag)
+                            message.addReceivers(other_ag)
+                            message.addContent(message_content)
+                            ag.send_message(message)
+                            if len(ag.ongoingConv) != 0 and [message.conversation_id, True] in ag.ongoingConv:
+                                convIndex = ag.ongoingConv.index([message.conversation_id, True])
+                                while ag.ongoingConv[convIndex][1]:
+                                    messagedActions.append(ag.request_reply(other_ag))
+                                    ag.end_conversation(convIndex)
+                print(messagedActions)
+                ag.plan.add_Action(messagedActions[0])
+
+                print(f"Plans for the 'Agent {ag.id}':")
+                while len(ag.plan.actions) != 0:
+                    print(ag.plan.actions)
+                    if ":" in ag.plan.actions[0]:
+                        get_action_name, get_action_params = ag.plan.actions[0].split(": ")
                     else:
-                        print("* Agent will move from position: ", ag.get_agent_position(), "To position: ", new_pos)
-                        ag.update_agent_position(new_pos)
-                elif get_action_name == "Pick":
-                    ag.Pick(get_action_params)
-                    ag.update_tiles(ag.get_agent_position())
-                elif get_action_name == "UseTile":
-                    points_to_be_transfered = 5
-                    ag.Use_tile(get_action_params)
-                    if points_to_be_transfered < ag.get_agent_score():
-                        ag.Transfer_points([other_ag for other_ag in agents if ag.id != other_ag.id][0], 5)
-        
-                ag.plan.remove()
-                # Prepare the messsage to send to other agents
-                message_content = Message(agPosition=ag.get_agent_position(), agHoldingTileColor=ag.is_Holding_Tile[1])
-                message = AgentMessage(conversation_id="Inform")
-                message.setSender(ag.id)
-                message.addReceivers([other_ag for other_ag in agents if ag.id != other_ag.id])
-                message.addContent(message_content)
-                ag.send_message(message)
-                
-                # ag.perceive(Events(ag.))
-                # new_pos = ag.Move(direction, ag.W, ag.H)
-                # neigh_hole_direction = ag.holesNeighbours()
-                # if neigh_hole_direction != '':
-                #     print("where to hole", neigh_hole_direction)
-                #     ag.Use_tile(neigh_hole_direction)
-                # print(ag.holes)
-                # if new_pos in ag.obstacles or new_pos in [elem[2] for elem in ag.holes.values()]:
-                #     direction = random.choice(["North", "South", "East", "West"])
-                #     print("test apel")
-                #     if ag.is_Holding_Tile[0]:
-                #         ag.Droptile()
-                # else:
-                #     ag.update_agent_position(new_pos)   
+                        get_action_name = ag.plan.actions[0]
+
+                    if get_action_name == "Move":
+                            new_pos = ag.Move(get_action_params)
+                            # Check if the new position is blocked by obstacle or by hole
+                            # change position if is clear
+                            holes_values = ag.holes.values()
+                            holes_positions = [elem[2] for elem in holes_values]
+                            if (new_pos not in ag.obstacles and new_pos in holes_positions) or (new_pos not in holes_positions and new_pos in ag.obstacles) or (new_pos in ag.obstacles and new_pos in holes_positions):
+                                print("* Agent will keep the current position this step!")
+                            else:
+                                print("* Agent will move from position: ", ag.get_agent_position(), "To position: ", new_pos)
+                                ag.update_agent_position(new_pos)
+
+                    if get_action_name == "Pick":
+                        ag.Pick(get_action_params)
+                        ag.update_tiles(ag.get_agent_position())
+                    
+                    if get_action_name == "UseTile":
+                        points_to_be_transfered = 5
+                        ag.Use_tile(get_action_params)
+                        if points_to_be_transfered < ag.get_agent_score():
+                            ag.Transfer_points([other_ag for other_ag in agents if ag.id != other_ag.id][0], 5)
+
+                    if get_action_name == "DoNothingTestAction":
+                        print("*****DOES NOTHING: This is only for test and does nothing!")
+
+                    ag.plan.remove()
+
 
                 print("\n")
 

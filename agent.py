@@ -5,6 +5,7 @@ from agentmessage import *
 from inbox import *
 from path import * 
 from planning import *
+
 """
 N t T W H
 nr_MyAgenti
@@ -47,8 +48,9 @@ class Agent(Grid):
     id = 1
     is_Holding_Tile = None
     plan = None
+    ongoingConv = []
 
-    def __init__(self, x, y, colour, grid, plan: Plan=None):
+    def __init__(self, x, y, colour, grid, plan: Plan=None, ongoingConv=[]):
         super().__init__(grid.W, grid.H, grid.obstacles, grid.tiles, grid.holes, grid.env)
         self.x = x
         self.y = y
@@ -58,6 +60,7 @@ class Agent(Grid):
         Agent.id += 1
         self.inbox = Inbox()
         self.plan = plan
+        self.ongoingConv = []
 
     def __str__(self):
         return f"Position: ({self.x}, {self.y})\nColor: {self.colour}"
@@ -116,42 +119,38 @@ class Agent(Grid):
             self.is_Holding_Tile = [False, None]
 
     def holesNeighbours(self):
-        if self.is_Holding_Tile[0]:
-            ag_pos = self.get_agent_position()
-            north, south, west, east = (ag_pos[0] + 1, ag_pos[1]), (ag_pos[0] - 1, ag_pos[1]), (
-                ag_pos[0], ag_pos[1] - 1), (ag_pos[0], ag_pos[1] + 1)
+        ag_pos = self.get_agent_position()
+        south, north, west, east = (ag_pos[0] + 1, ag_pos[1]), (ag_pos[0] - 1, ag_pos[1]), (
+            ag_pos[0], ag_pos[1] - 1), (ag_pos[0], ag_pos[1] + 1)
 
-            holes_values = self.holes.values()
-            holes_pos = [elem for elem in holes_values] if len(holes_values) > 0 else []
+        holes_values = self.holes.values()
+        holes_pos = [elem for elem in holes_values] if len(holes_values) > 0 else []
 
-            for hol_pos in holes_pos:
-                if self.is_Holding_Tile[1] == hol_pos[1]:
-                    if north == hol_pos[2]:
-                        return "North"
-                    elif south == hol_pos[2]:
-                        return "South"
-                    elif west == hol_pos[2]:
-                        return "West"
-                    elif east == hol_pos[2]:
-                        return "East"
-            return ""
+        for hol_pos in holes_pos:
+            if self.is_Holding_Tile[1] == hol_pos[1]:
+                if north == hol_pos[2]:
+                    return "North"
+                elif south == hol_pos[2]:
+                    return "South"
+                elif west == hol_pos[2]:
+                    return "West"
+                elif east == hol_pos[2]:
+                    return "East"
         return ""
+        
 
     def Use_tile(self, direction):
         ag_pos = self.get_agent_position()
         hol_pos = None
-
         if direction == "North":
-            hol_pos = (ag_pos[0] + 1, ag_pos[1])
-        elif direction == "South":
             hol_pos = (ag_pos[0] - 1, ag_pos[1])
+        elif direction == "South":
+            hol_pos = (ag_pos[0] + 1, ag_pos[1])
         elif direction == "West":
             hol_pos = (ag_pos[0], ag_pos[1] - 1)
         elif direction == "East":
             hol_pos = (ag_pos[0], ag_pos[1] + 1)
-
         get_hole = super().get_key(self.holes, hol_pos)
-
         if self.holes[get_hole][0] == 1 and self.holes[get_hole][1] == self.get_agent_colour():
             self.update_score(40)
             print(f"The agent {self.id} gets 40 and has a new number of points {self.get_agent_score()}")
@@ -185,12 +184,14 @@ class Agent(Grid):
     def perceive(self, events):
         ag_pos = self.get_agent_position()
         if self.isTile(ag_pos) and not self.is_Holding_Tile[0]:
-            return f"Pick: {self.get_tile_colour(ag_pos)}"
+            #return f"Pick: {self.get_tile_colour(ag_pos)}"
+            action = "Pick: " + str(self.get_tile_colour(ag_pos))
+            self.plan.add_Action(action)
 
         dir_neighs = self.holesNeighbours()
         if dir_neighs != '':
             return f"UseTile: {dir_neighs}"
-        
+
         holesPos = [elem[2] for elem in events.holes.values()]
         if not events.has_Tile[0]:
             pos_list = get_manhattan_dist(events.tiles, ag_pos)
@@ -207,7 +208,7 @@ class Agent(Grid):
                 next_dr = "South"
             
             return f"Move: {next_dr}"
-
+            
         elif events.has_Tile[0]:
             holesValues = events.holes.values()
             holesColorAndPos = [(elem[1], elem[2]) for elem in holesValues if elem[1] == self.is_Holding_Tile[1]]
@@ -229,12 +230,15 @@ class Agent(Grid):
                 next_dr = "South"
             
             return f'Move: {next_dr}'
- 
+        
+
                  
         # return random.choice(['North', 'South', 'West', 'East'])
     def send_message(self, message):
-        for receiver in message.receivers:
-            receiver.inbox.add_message(message)
+        if [message.conversation_id, True] not in self.ongoingConv:
+            self.ongoingConv.append([message.conversation_id, True])
+        message.receivers.inbox.add_message(message)
+
 
     def receive_message(self):
         msg_list = []
@@ -242,3 +246,21 @@ class Agent(Grid):
             msg = self.inbox.get_message()
             msg_list.append(msg)
         return msg_list
+    
+    def request_reply(self, agId):
+        print(f"Agent {str(agId.id)} will reply to the following message: ")
+        msgList = agId.receive_message()
+        if len(msgList) != 0:
+            for msg in msgList:
+                print(f"Conversation ID: {msg.conversation_id}; Received Message from {msg.sender_ag.id}:\n {msg.message}")
+                return self.process_message(msg)
+
+
+    def process_message(self, msg):
+        #TODO ways to process message and return an action
+        return "DoNothingTestAction"
+
+    def end_conversation(self, convIndex):
+        self.ongoingConv[convIndex][1] = False
+
+

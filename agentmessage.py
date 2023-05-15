@@ -13,21 +13,21 @@ class Message:
 
 class AgentMessage:
     conversation_id = None
-    sender_id = None
+    sender_ag = None
     receivers = None
     message = None
 
-    def __init__(self, conversation_id, receivers=None, sender_id=None, message: Message=None):
+    def __init__(self, conversation_id, receivers=None, sender_ag=None, message: Message=None):
         self.conversation_id = conversation_id
-        self.sender_id = sender_id
+        self.sender_ag = sender_ag
         self.receivers = receivers
         self.message = message
 
     def __str__(self):
-        return f"Id: {self.conversation_id}\nSender: {self.sender_id}\nReceivers: {self.receivers}\nMessage: {self.message}"
+        return f"Id: {self.conversation_id}\nSender: {self.sender_ag}\nReceivers: {self.receivers}\nMessage: {self.message}"
     
-    def setSender(self, agendtId):
-        self.sender_id = agendtId
+    def setSender(self, agent):
+        self.sender_ag = agent
 
     def addReceivers(self, agentsId: list):
         self.receivers = agentsId
