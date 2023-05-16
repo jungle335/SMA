@@ -122,12 +122,10 @@ class Agent(Grid):
         ag_pos = self.get_agent_position()
         south, north, west, east = (ag_pos[0] + 1, ag_pos[1]), (ag_pos[0] - 1, ag_pos[1]), (
             ag_pos[0], ag_pos[1] - 1), (ag_pos[0], ag_pos[1] + 1)
-
         holes_values = self.holes.values()
         holes_pos = [elem for elem in holes_values] if len(holes_values) > 0 else []
-
         for hol_pos in holes_pos:
-            if self.is_Holding_Tile[1] == hol_pos[1]:
+            if self.is_Holding_Tile[0]:
                 if north == hol_pos[2]:
                     return "North"
                 elif south == hol_pos[2]:
@@ -194,7 +192,14 @@ class Agent(Grid):
 
         holesPos = [elem[2] for elem in events.holes.values()]
         if not events.has_Tile[0]:
-            pos_list = get_manhattan_dist(events.tiles, ag_pos)
+            tilesValues = events.tiles.values()
+            tilesColorAndPos = [(elem[1], elem[2]) for elem in tilesValues if elem[1] == self.colour]
+            tilesKeys = [self.get_key(self.tiles, tile[1]) for tile in tilesColorAndPos]
+            validtiles = {}
+            for key in tilesKeys:
+                validtiles[key] = events.tiles[key]
+            print(validtiles)
+            pos_list = get_manhattan_dist(validtiles, ag_pos)
             new_pos = path(self.H, self.W, self.get_agent_position(), pos_list, self.obstacles, holesPos)
      
             next_dr = None
@@ -210,13 +215,7 @@ class Agent(Grid):
             return f"Move: {next_dr}"
             
         elif events.has_Tile[0]:
-            holesValues = events.holes.values()
-            holesColorAndPos = [(elem[1], elem[2]) for elem in holesValues if elem[1] == self.is_Holding_Tile[1]]
-            holeKeys = [self.get_key(self.holes, hole[1]) for hole in holesColorAndPos]
-            validHoles = {}
-            for key in holeKeys:
-                validHoles[key] = events.holes[key]
-            pos_list = get_manhattan_dist(validHoles, ag_pos)
+            pos_list = get_manhattan_dist(events.holes, ag_pos)
             new_pos = path(self.H, self.W, self.get_agent_position(), pos_list, events.obstacles)
             
             next_dr = None

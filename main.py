@@ -6,7 +6,7 @@ import pygame
 import os
 
 # Call function to read the file
-agents, grid = read_map("./tests/system__FV_sys4.txt")
+agents, grid = read_map("./tests/system__default.txt")
 
 # Get Width and Height and scale the Grid Window to fit
 gridW = agents[0].W
@@ -14,7 +14,7 @@ gridH = agents[0].H
 
 window = (800, 600)
 CELL_SIZE = (window[0] // gridW, window[1] // gridH)
-move_timer = grid.t
+move_timer = 1500#grid.t
 
 pygame.init()
 window = pygame.display.set_mode(window)
